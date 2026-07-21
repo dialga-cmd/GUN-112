@@ -25,16 +25,16 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Security :: Cryptography",
 ]
+dependencies = [
+    "argon2-cffi>=23.1.0",
+    "cryptography>=42.0.2"
+]
 
 [project.urls]
 Homepage = "https://github.com/adityarai108/gun101"
 
 [project.scripts]
 gun101 = "gun101.cli:main"
-
-[project.dependencies]
-argon2-cffi = ">=23.1.0"
-cryptography = ">=42.0.2"
 
 [project.optional-dependencies]
 dev = [
