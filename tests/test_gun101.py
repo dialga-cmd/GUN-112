@@ -482,7 +482,8 @@ class TestKeyfile:
     def test_keyfile_fingerprint_uses_hmac_compare_digest(self):
         """Ensure that keyfile fingerprint comparison uses hmac.compare_digest for constant-time comparison."""
         # Read the handler.py file and check that the comparison uses hmac.compare_digest
-        with open('/home/dialgga/gun101/src/gun101/handler.py', 'r') as f:
+        handler_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'gun101', 'handler.py')
+        with open(handler_path, 'r') as f:
             content = f.read()
         # We expect to see a line that uses hmac.compare_digest for the fingerprint comparison
         assert 'hmac.compare_digest' in content
@@ -492,7 +493,6 @@ class TestKeyfile:
             self.fail('Found direct string comparison of fingerprints: actual_fingerprint != expected_fingerprint')
         # Additionally, we can do a functional test to ensure the fingerprint is used correctly.
         import tempfile
-        import os
         from gun101 import handler, keyfile
         data = b"test data"
         password = "Str0ngP@ssw0rd!"  # meets policy

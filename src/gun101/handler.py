@@ -51,9 +51,11 @@ def encrypt_file(file_data: bytes, password: str, keyfile_path: str = None) -> b
         2. Generate random salt.
         3. Load keyfile if provided.
         4. Derive encryption key using Argon2id.
-        5. Encrypt data with AES-256-GCM (with authenticated header for v2.1).
-        6. Wipe key from memory.
-        7. Build JSON container with metadata.
+        5. Generate nonce.
+        6. Build header for v2.1 (authenticated header).
+        7. Encrypt data with AES-256-GCM (with authenticated header for v2.1).
+        8. Wipe key from memory.
+        9. Build JSON container with metadata.
     """
     # Input validation
     if not isinstance(file_data, bytes):
@@ -71,9 +73,8 @@ def encrypt_file(file_data: bytes, password: str, keyfile_path: str = None) -> b
     # Step 4: Derive key
     key = kdf.derive_key(password, salt, keyfile_bytes)
 
-    # Step 5: Encrypt
+    # Step 5: Generate nonce
     nonce = os.urandom(config.AES_NONCE_LEN)
-    aesgcm = cipher.AESGCM(key)
 
     # Build header for v2.1 (authenticated header)
     header = {
@@ -84,14 +85,12 @@ def encrypt_file(file_data: bytes, password: str, keyfile_path: str = None) -> b
         "salt": base64.b64encode(salt).decode('utf-8'),
         "nonce": base64.b64encode(nonce).decode('utf-8')
     }
-    # Convert header to JSON bytes for associated data
-    header_json = json.dumps(header, separators=(',', ':'))  # Compact JSON
+    # Convert header to JSON bytes for associated data (with sorted keys for deterministic ordering)
+    header_json = json.dumps(header, separators=(',', ':'), sort_keys=True)  # Compact JSON
     header_bytes = header_json.encode('utf-8')
 
     # Encrypt with associated data
-    ciphertext_tag = aesgcm.encrypt(nonce, file_data, header_bytes)
-    ciphertext = ciphertext_tag[:-16]
-    tag = ciphertext_tag[-16:]
+    ciphertext, tag = cipher.encrypt(file_data, key, nonce, header_bytes)
 
     # Step 6: Wipe key from memory (overwrite with zeros and delete reference)
     key = bytes(config.AES_KEY_LEN)  # Overwrite with zeros
@@ -164,26 +163,25 @@ def decrypt_file(container_data: bytes, password: str, keyfile_path: str = None)
     key = kdf.derive_key(password, salt, keyfile_bytes)
 
     # Step 7: Decrypt
-    aesgcm = cipher.AESGCM(key)
     try:
         if version == "2.0":
             # Old format: no associated data
-            plaintext = aesgcm.decrypt(nonce, ciphertext + tag, None)
+            plaintext = cipher.decrypt(nonce, ciphertext, tag, key, None)
         else:  # version == "2.1"
             # New format: authenticated header
             # Create a copy of the container without the ciphertext and tag for associated data
             header_for_aad = container.copy()
             header_for_aad.pop("ciphertext", None)
             header_for_aad.pop("tag", None)
-            header_json = json.dumps(header_for_aad, separators=(',', ':'))  # Compact JSON
+            header_json = json.dumps(header_for_aad, separators=(',', ':'), sort_keys=True)  # Compact JSON
             header_bytes = header_json.encode('utf-8')
-            plaintext = aesgcm.decrypt(nonce, ciphertext + tag, header_bytes)
+            plaintext = cipher.decrypt(nonce, ciphertext, tag, key, header_bytes)
     except Exception:
         # Any error (invalid tag, wrong key, etc.) results in a generic error
         raise ValueError("Decryption failed")
     finally:
         # Wipe key from memory
-        key = bytes(config.AES_KEY_LEN)
+        key = bytes(config.AES_KEY_LEN)  # Overwrite with zeros
         del key
 
     return plaintext

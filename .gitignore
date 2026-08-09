@@ -13,3 +13,4 @@ htmlcov/
 *.egg-info/
 .mypy_cache/
 .venv/
+*.tmp
