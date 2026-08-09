@@ -11,6 +11,8 @@ GUN-101 encrypts files with authenticated encryption, providing confidentiality 
 
 The design prioritizes correctness and transparency over complexity or marketing claims.
 
+The tool uses a versioned container format (currently v2.1) to allow for future improvements while maintaining backward compatibility with v2.0 encrypted files.
+
 ## Cryptographic Primitives
 
 - **Key Derivation**: Argon2id (memory-hard, winner of the Password Hashing Competition 2015)
@@ -57,6 +59,8 @@ Encrypts `secrets.pdf` to `secrets.pdf.gun101`. Omit `--keyfile` for password-on
 
 **Password requirements**: Must be at least 10 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character.
 
+**Password input**: Password can be entered via interactive prompt or provided through the `GUN101_PASSWORD` environment variable (see [Security Design](docs/SECURITY.md) for trade-offs).
+
 ### Decrypt a file
 
 ```bash
@@ -65,6 +69,8 @@ gun101 decrypt secrets.pdf.gun101 --keyfile /path/to/keyfile
 Decrypts to `secrets.pdf` (removes `.gun101` extension). Omit `--keyfile` for password-only mode.
 
 **Password requirements**: Must be at least 10 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character.
+
+**Password input**: Password can be entered via interactive prompt or provided through the `GUN101_PASSWORD` environment variable (see [Security Design](docs/SECURITY.md) for trade-offs).
 
 ### Verify a keyfile fingerprint
 
@@ -139,7 +145,7 @@ pip install --require-hashes -r requirements.lock
 
 This lockfile includes:
 - argon2-cffi==25.1.0
-- cryptography==49.0.0
+- cryptography==50.0.0
 
 ## Testing
 

@@ -104,9 +104,9 @@ This document outlines the threats considered in the design of GUN-101 and how t
 - Attempts to induce decryption of incorrect plaintext or bypass authentication
 
 **Mitigations:**
-- AES-256-GCM provides integrity: any modification results in decryption failure
-- Authentication tag verified before returning plaintext
-- On failure, library returns a generic "Decryption failed" error to avoid oracle attacks
+- AES-256-GCM provides integrity: any modification to the container (including ciphertext, nonce, tag, or header fields) results in decryption failure. Header fields (protocol, version, etc.) are authenticated as associated data in the v2.1 format.
+- Authentication tag verified before returning plaintext.
+- On failure, library returns a generic "Decryption failed" error to avoid oracle attacks.
 
 **Residual Risk:** None. Tampering is detected with overwhelming probability.
 

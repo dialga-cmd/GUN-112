@@ -53,8 +53,9 @@ The library attempts to wipe sensitive keys from memory by overwriting the varia
 ## What This Mode Protects Against
 
 1. **Passive attackers** who obtain the encrypted file but lack the password (and keyfile, if used) cannot decrypt due to the strength of AES-256-GCM and Argon2id.
-2. **Tamper detection**: Any modification to the encrypted container is detected and rejected before returning plaintext, thanks to GCM authentication.
+2. **Container integrity**: Any modification to the encrypted container (including ciphertext, nonce, tag, or header fields) is detected and rejected before returning plaintext, thanks to GCM authentication. The header fields (protocol, version, etc.) are authenticated as associated data in the v2.1 format.
 3. **Two-factor protection** (when keyfile stored separately): An attacker who knows the password but does not have the keyfile cannot decrypt.
+4. **Constant-time keyfile comparison**: Keyfile fingerprints are compared using `hmac.compare_digest` to prevent timing attacks that could leak information about the keyfile.
 
 ## What This Mode Does NOT Protect Against
 

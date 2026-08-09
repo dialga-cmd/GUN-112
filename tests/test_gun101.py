@@ -4,7 +4,7 @@ import json
 import os
 import tempfile
 import pytest
-from src.gun101 import handler, keyfile, kdf, cipher, config
+from gun101 import handler, keyfile, kdf, cipher, config
 
 # Strong passwords for testing
 STRONG_PASSWORD = "Str0ngP@ssw0rd!"  # 13 chars: upper, lower, digit, special
@@ -256,7 +256,7 @@ class TestCryptographicProperties:
 
     def test_argon2id_parameters(self):
         """Ensure Argon2id parameters are set to expected secure values."""
-        from src.gun101 import config
+        from gun101 import config
         # Time cost: 4 iterations
         assert config.ARGON2_TIME_COST == 4
         # Memory cost: 262144 KB (256 MB)
@@ -493,7 +493,7 @@ class TestKeyfile:
         # Additionally, we can do a functional test to ensure the fingerprint is used correctly.
         import tempfile
         import os
-        from src.gun101 import handler, keyfile
+        from gun101 import handler, keyfile
         data = b"test data"
         password = "Str0ngP@ssw0rd!"  # meets policy
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -525,7 +525,7 @@ class TestCLI:
 
     def test_cli_encrypt_function_direct(self):
         """Test the encrypt function directly (for coverage)."""
-        from src.gun101 import cli
+        from gun101 import cli
         import argparse
         import sys
 
@@ -542,13 +542,13 @@ class TestCLI:
 
     def test_cli_decrypt_function_direct(self):
         """Test the decrypt function directly (for coverage)."""
-        from src.gun101 import cli
+        from gun101 import cli
         assert hasattr(cli, 'decrypt')
         assert callable(cli.decrypt)
 
     def test_cli_safe_open_write_function_direct(self):
         """Test the safe_open_write function directly (for coverage)."""
-        from src.gun101 import cli
+        from gun101 import cli
         import tempfile
         import os
 
