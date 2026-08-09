@@ -1,9 +1,43 @@
 """Command-line interface for GUN-101."""
 import argparse
-import sys
+import getpass
 import os
+import sys
 from . import handler
 from . import keyfile
+
+def get_password():
+    """Get password from environment variable or prompt.
+    If the environment variable GUN101_PASSWORD is set, use it (with a warning).
+    Otherwise, prompt the user securely.
+    """
+    password = os.environ.get('GUN101_PASSWORD')
+    if password is not None:
+        print(
+            "Warning: Using password from environment variable GUN101_PASSWORD is insecure. "
+            "Consider using an interactive prompt instead.",
+            file=sys.stderr
+        )
+        return password
+    return getpass.getpass(prompt='Password: ')
+
+def safe_open_write(path):
+    """Open a file for writing in binary mode, after checking for symlinks and path safety.
+    Raises ValueError if the path is unsafe.
+    """
+    # Check for symlink on the given path (before resolving)
+    if os.path.islink(path):
+        raise ValueError("Output path is a symlink; refusing to write")
+
+    # Get the real path (resolving symlinks)
+    real_path = os.path.realpath(path)
+    real_cwd = os.path.realpath(os.getcwd())
+    # Ensure the real path is within the real cwd
+    if not os.path.commonpath([real_path, real_cwd]) == real_cwd:
+        raise ValueError("Output path attempts to escape the intended directory")
+
+    # Open the file for writing in binary mode
+    return open(path, 'wb')
 
 def encrypt(args):
     """Handle the encrypt subcommand."""
@@ -15,16 +49,17 @@ def encrypt(args):
         sys.exit(1)
 
     try:
-        container = handler.encrypt_file(data, args.password, args.keyfile)
+        password = get_password()
+        container = handler.encrypt_file(data, password, args.keyfile)
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
     output_path = args.output if args.output else (args.file + '.gun101')
     try:
-        with open(output_path, 'wb') as f:
+        with safe_open_write(output_path) as f:
             f.write(container)
-    except OSError as e:
+    except (OSError, ValueError) as e:
         print(f"Error writing output file: {e}", file=sys.stderr)
         sys.exit(1)
 
@@ -40,7 +75,8 @@ def decrypt(args):
         sys.exit(1)
 
     try:
-        data = handler.decrypt_file(container, args.password, args.keyfile)
+        password = get_password()
+        data = handler.decrypt_file(container, password, args.keyfile)
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -54,9 +90,9 @@ def decrypt(args):
             output_path = args.file + '.decrypted'
 
     try:
-        with open(output_path, 'wb') as f:
+        with safe_open_write(output_path) as f:
             f.write(data)
-    except OSError as e:
+    except (OSError, ValueError) as e:
         print(f"Error writing output file: {e}", file=sys.stderr)
         sys.exit(1)
 
@@ -113,7 +149,7 @@ def main():
     encrypt_parser.add_argument('file', help='File to encrypt')
     encrypt_parser.add_argument('--keyfile', help='Path to keyfile for two-factor protection')
     encrypt_parser.add_argument('--output', help='Output file path (default: input.gun101)')
-    encrypt_parser.add_argument('--password', required=True, help='Password for encryption')
+    # Removed --password argument
     encrypt_parser.set_defaults(func=encrypt)
 
     # Decrypt subcommand
@@ -121,7 +157,7 @@ def main():
     decrypt_parser.add_argument('file', help='File to decrypt')
     decrypt_parser.add_argument('--keyfile', help='Path to keyfile for two-factor protection')
     decrypt_parser.add_argument('--output', help='Output file path (default: strip .gun101 or add .decrypted)')
-    decrypt_parser.add_argument('--password', required=True, help='Password for decryption')
+    # Removed --password argument
     decrypt_parser.set_defaults(func=decrypt)
 
     # Generate-keyfile subcommand

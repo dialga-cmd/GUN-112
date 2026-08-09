@@ -96,6 +96,15 @@ gun101 keyfile-fingerprint <path>
 - Resists side-channel attacks via data-independent memory access
 - Recommended by OWASP and NIST SP 800-63B for password hashing
 
+### Password Composition Rules
+GUN-101 enforces a password policy requiring at least 10 characters with uppercase, lowercase, digit, and special character. While NIST 800-63B de-emphasizes composition rules for online authentication (where rate limiting applies), GUN-101 retains them for the following reasons:
+1. **Offline attack scenario**: Encryption tools face offline brute-force attacks where rate limiting cannot be applied
+2. **Entropy enhancement**: Composition rules increase password entropy, making brute-force attacks more expensive
+3. **User familiarity**: Many users are accustomed to these rules and they provide a baseline strength guarantee
+4. **Compatibility with Argon2id**: Combined with memory-hard Argon2id, this provides strong protection against guessing attacks
+
+Users seeking maximum security should consider using longer passphrases (14+ characters) that meet these requirements, or randomly generated passwords of sufficient length.
+
 ### Why AES-256-GCM?
 - Provides both confidentiality and integrity (authenticated encryption)
 - Eliminates padding oracle vulnerabilities present in CBC mode
@@ -119,6 +128,18 @@ All errors produce generic messages (e.g., "Decryption failed") to avoid leaking
 - Python >= 3.9
 - argon2-cffi >= 23.1.0
 - cryptography >= 42.0.2
+
+## Reproducible Builds
+
+For security-critical applications, exact dependency versions should be pinned to prevent supply chain attacks and ensure reproducible builds. A `requirements.lock` file is provided with exact versions and cryptographic hashes:
+
+```bash
+pip install --require-hashes -r requirements.lock
+```
+
+This lockfile includes:
+- argon2-cffi==25.1.0
+- cryptography==49.0.0
 
 ## Testing
 

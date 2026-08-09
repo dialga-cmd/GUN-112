@@ -16,7 +16,7 @@ GUN-101 is a file encryption tool that provides confidentiality and integrity th
 
 **Parameters:**
 - Time cost: 4 iterations
-- Memory cost: 128 MiB (131072 KiB)
+- Memory cost: 256 MiB (262144 KiB)
 - Parallelism: 4 lanes
 - Hash length: 32 bytes (256 bits)
 - Salt length: 32 bytes
@@ -70,3 +70,13 @@ The library attempts to wipe sensitive keys from memory by overwriting the varia
 - Nonces are generated randomly using `os.urandom()` for each encryption.
 - The protocol includes versioning to allow for future updates.
 - Error messages are generic to avoid leaking information about what failed.
+
+## Environment Variable Trade-off
+
+The `GUN101_PASSWORD` environment variable provides convenience for automation and scripting, but it carries security risks:
+- Environment variables are visible to other processes running as the same user via `/proc/<pid>/environ`
+- They can be inherited by child processes
+- They may leak into CI/CD logs, crash dumps, or shell history
+- Unlike interactive prompts, they cannot be prevented from appearing in process listings
+
+For maximum security, use interactive password entry. The environment variable option is provided as a convenience/trade-off for trusted automation scenarios where these risks are understood and mitigated.

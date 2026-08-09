@@ -1,9 +1,20 @@
 """Configuration constants for GUN-101."""
 
 PROTOCOL = "GUN-101"
-VERSION = "2.0"
+VERSION = "2.1"
+# Argon2id parameters for key derivation.
+# As of 2024, OWASP recommends:
+#   - Memory cost: at least 64 MB, but 256 MB is recommended for high security.
+#   - Time cost: at least 3 iterations, but 4 is common.
+#   - Parallelism: at least 4 lanes.
+# We use:
+#   - Time cost: 4 iterations
+#   - Memory cost: 262144 KB (256 MB)
+#   - Parallelism: 4 lanes
+#   - Hash length: 32 bytes (256 bits)
+#   - Salt length: 32 bytes
 ARGON2_TIME_COST = 4
-ARGON2_MEMORY_COST = 131072   # 128 MB expressed in KB
+ARGON2_MEMORY_COST = 262144   # 256 MB expressed in KB
 ARGON2_PARALLELISM = 4
 ARGON2_HASH_LEN = 32
 ARGON2_SALT_LEN = 32

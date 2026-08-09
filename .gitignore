@@ -1,0 +1,15 @@
+.claude
+.pytest_cache
+dist
+__pycache__
+*.bak
+*~
+.DS_Store
+Thumbs.db
+.env
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+.mypy_cache/
+.venv/

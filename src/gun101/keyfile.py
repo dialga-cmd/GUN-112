@@ -3,6 +3,24 @@ import os
 import hashlib
 from . import config
 
+def safe_open_write(path):
+    """Open a file for writing in binary mode, after checking for symlinks and path safety.
+    Raises ValueError if the path is unsafe.
+    """
+    # Check for symlink on the given path (before resolving)
+    if os.path.islink(path):
+        raise ValueError("Output path is a symlink; refusing to write")
+
+    # Get the real path (resolving symlinks)
+    real_path = os.path.realpath(path)
+    real_cwd = os.path.realpath(os.getcwd())
+    # Ensure the real path is within the real cwd
+    if not os.path.commonpath([real_path, real_cwd]) == real_cwd:
+        raise ValueError("Output path attempts to escape the intended directory")
+
+    # Open the file for writing in binary mode
+    return open(path, 'wb')
+
 def generate_keyfile(path: str) -> None:
     """
     Generate a cryptographically random keyfile.
@@ -11,7 +29,7 @@ def generate_keyfile(path: str) -> None:
         path: The filesystem path where the keyfile will be written.
 
     Raises:
-        ValueError: If a file already exists at the given path.
+        ValueError: If a file already exists at the given path, or if the path is unsafe.
 
     Side effects:
         Creates a file at `path` with 0o600 permissions containing
@@ -21,8 +39,11 @@ def generate_keyfile(path: str) -> None:
         raise ValueError(f"Key file already exists at {path}. "
                          "Delete it manually if you intend to replace it.")
     keyfile_bytes = os.urandom(config.KEYFILE_LEN)
-    with open(path, 'wb') as f:
-        f.write(keyfile_bytes)
+    try:
+        with safe_open_write(path) as f:
+            f.write(keyfile_bytes)
+    except OSError as e:
+        raise OSError(f"Error creating keyfile: {e}")
     # Restrict permissions to owner read/write only
     os.chmod(path, 0o600)
 

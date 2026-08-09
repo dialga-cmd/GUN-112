@@ -31,7 +31,7 @@ This document outlines the threats considered in the design of GUN-101 and how t
 - AES-256-GCM with a random 12-byte nonce provides confidentiality assuming key secrecy
 - Key derived via Argon2id with parameters:
   - Time cost: 4
-  - Memory: 128 MiB
+  - Memory: 256 MiB
   - Parallelism: 4 lanes
   - Salt: 32 bytes random
   - Hash length: 32 bytes

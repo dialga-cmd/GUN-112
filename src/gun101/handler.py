@@ -3,6 +3,7 @@ import json
 import base64
 import os
 import string
+import hmac
 from . import config
 from . import kdf
 from . import cipher
@@ -50,7 +51,7 @@ def encrypt_file(file_data: bytes, password: str, keyfile_path: str = None) -> b
         2. Generate random salt.
         3. Load keyfile if provided.
         4. Derive encryption key using Argon2id.
-        5. Encrypt data with AES-256-GCM.
+        5. Encrypt data with AES-256-GCM (with authenticated header for v2.1).
         6. Wipe key from memory.
         7. Build JSON container with metadata.
     """
@@ -71,23 +72,35 @@ def encrypt_file(file_data: bytes, password: str, keyfile_path: str = None) -> b
     key = kdf.derive_key(password, salt, keyfile_bytes)
 
     # Step 5: Encrypt
-    nonce, ciphertext, tag = cipher.encrypt(file_data, key)
+    nonce = os.urandom(config.AES_NONCE_LEN)
+    aesgcm = cipher.AESGCM(key)
+
+    # Build header for v2.1 (authenticated header)
+    header = {
+        "protocol": config.PROTOCOL,
+        "version": "2.1",  # We always encrypt with the new version
+        "keyfile_required": keyfile_path is not None,
+        "keyfile_fingerprint": keyfile.keyfile_fingerprint(keyfile_bytes) if keyfile_bytes else None,
+        "salt": base64.b64encode(salt).decode('utf-8'),
+        "nonce": base64.b64encode(nonce).decode('utf-8')
+    }
+    # Convert header to JSON bytes for associated data
+    header_json = json.dumps(header, separators=(',', ':'))  # Compact JSON
+    header_bytes = header_json.encode('utf-8')
+
+    # Encrypt with associated data
+    ciphertext_tag = aesgcm.encrypt(nonce, file_data, header_bytes)
+    ciphertext = ciphertext_tag[:-16]
+    tag = ciphertext_tag[-16:]
 
     # Step 6: Wipe key from memory (overwrite with zeros and delete reference)
     key = bytes(config.AES_KEY_LEN)  # Overwrite with zeros
     del key
 
-    # Step 7: Build container
-    container = {
-        "protocol": config.PROTOCOL,
-        "version": config.VERSION,
-        "keyfile_required": keyfile_path is not None,
-        "keyfile_fingerprint": keyfile.keyfile_fingerprint(keyfile_bytes) if keyfile_bytes else None,
-        "salt": base64.b64encode(salt).decode('utf-8'),
-        "nonce": base64.b64encode(nonce).decode('utf-8'),
-        "ciphertext": base64.b64encode(ciphertext).decode('utf-8'),
-        "tag": base64.b64encode(tag).decode('utf-8')
-    }
+    # Step 7: Build container (header + ciphertext + tag)
+    container = header.copy()
+    container["ciphertext"] = base64.b64encode(ciphertext).decode('utf-8')
+    container["tag"] = base64.b64encode(tag).decode('utf-8')
     return json.dumps(container).encode('utf-8')
 
 
@@ -113,18 +126,19 @@ def decrypt_file(container_data: bytes, password: str, keyfile_path: str = None)
     try:
         container = json.loads(container_data.decode('utf-8'))
     except (json.JSONDecodeError, UnicodeDecodeError):
-        raise ValueError("Invalid container format")
+        raise ValueError("Decryption failed")
 
     # Step 2: Verify protocol and version
     if container.get("protocol") != config.PROTOCOL:
-        raise ValueError(f"Unsupported protocol: {container.get('protocol')}")
-    if container.get("version") != config.VERSION:
-        raise ValueError(f"Unsupported version: {container.get('version')}")
+        raise ValueError("Decryption failed")
+    version = container.get("version")
+    if version not in ("2.0", "2.1"):
+        raise ValueError("Decryption failed")
 
     # Step 3: Check if keyfile is required
     keyfile_required = container.get("keyfile_required", False)
     if keyfile_required and keyfile_path is None:
-        raise ValueError("This file requires a key file. Use --keyfile <path>")
+        raise ValueError("Decryption failed")
 
     # Step 4: If keyfile provided, verify fingerprint
     keyfile_bytes = None
@@ -132,10 +146,10 @@ def decrypt_file(container_data: bytes, password: str, keyfile_path: str = None)
         keyfile_bytes = keyfile.load_keyfile(keyfile_path)
         expected_fingerprint = container.get("keyfile_fingerprint")
         if expected_fingerprint is None:
-            raise ValueError("Container does not contain a keyfile fingerprint")
+            raise ValueError("Decryption failed")
         actual_fingerprint = keyfile.keyfile_fingerprint(keyfile_bytes)
-        if actual_fingerprint != expected_fingerprint:
-            raise ValueError("Wrong key file.")
+        if not hmac.compare_digest(actual_fingerprint.encode('utf-8'), expected_fingerprint.encode('utf-8')):
+            raise ValueError("Decryption failed")
 
     # Step 5: Decode salt, nonce, ciphertext, tag
     try:
@@ -144,21 +158,31 @@ def decrypt_file(container_data: bytes, password: str, keyfile_path: str = None)
         ciphertext = base64.b64decode(container["ciphertext"])
         tag = base64.b64decode(container["tag"])
     except (KeyError, ValueError):
-        raise ValueError("Container missing required fields")
+        raise ValueError("Decryption failed")
 
     # Step 6: Derive key
     key = kdf.derive_key(password, salt, keyfile_bytes)
 
-    # Step 7: Decrypt and wipe key on any outcome
+    # Step 7: Decrypt
+    aesgcm = cipher.AESGCM(key)
     try:
-        plaintext = cipher.decrypt(nonce, ciphertext, tag, key)
-    except ValueError as e:
-        # Wipe key before re-raising
-        key = bytes(config.AES_KEY_LEN)
-        del key
-        raise ValueError("Decryption failed: wrong password or corrupted file.") from e
+        if version == "2.0":
+            # Old format: no associated data
+            plaintext = aesgcm.decrypt(nonce, ciphertext + tag, None)
+        else:  # version == "2.1"
+            # New format: authenticated header
+            # Create a copy of the container without the ciphertext and tag for associated data
+            header_for_aad = container.copy()
+            header_for_aad.pop("ciphertext", None)
+            header_for_aad.pop("tag", None)
+            header_json = json.dumps(header_for_aad, separators=(',', ':'))  # Compact JSON
+            header_bytes = header_json.encode('utf-8')
+            plaintext = aesgcm.decrypt(nonce, ciphertext + tag, header_bytes)
+    except Exception:
+        # Any error (invalid tag, wrong key, etc.) results in a generic error
+        raise ValueError("Decryption failed")
     finally:
-        # Ensure key is wiped even if decryption succeeds
+        # Wipe key from memory
         key = bytes(config.AES_KEY_LEN)
         del key
 

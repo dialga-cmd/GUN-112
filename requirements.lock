@@ -1,0 +1,9 @@
+# This lockfile ensures reproducible builds by pinning exact versions and hashes
+# Direct dependencies
+argon2-cffi==25.1.0 \
+    --hash=sha256:fdc8b074db390fccb6eb4a3604ae7231f219aa669a2652e0f20e16ba513d5741
+cryptography==49.0.0 \
+    --hash=sha256:cbc77da8c523d5abd028635ba850a6966fcee2c82e2bf65a41d1d8afe0f98be9
+
+# To install from this lockfile:
+# pip install --require-hashes -r requirements.lock
