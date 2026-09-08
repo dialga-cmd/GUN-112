@@ -5,6 +5,7 @@
 
 PROTOCOL = "GUN-101"
 VERSION = "2.1"
+CONTAINER_VERSION = VERSION
 # Argon2id parameters for key derivation.
 # As of 2024, OWASP recommends:
 #   - Memory cost: at least 64 MB, but 256 MB is recommended for high security.

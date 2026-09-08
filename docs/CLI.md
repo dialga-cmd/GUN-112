@@ -12,6 +12,7 @@ gun101 encrypt <file> [--keyfile <path>] [--output <path>]
 gun101 decrypt <file> [--keyfile <path>] [--output <path>]
 gun101 generate-keyfile <path>
 gun101 keyfile-fingerprint <path>
+gun101 info
 gun101 --help
 ```
 
@@ -140,6 +141,20 @@ the two commands cannot diverge.
 **Failure modes**
 
 - Keyfile not found or not exactly 32 bytes → error on stderr, exit `1`.
+
+### `gun101 info`
+
+**Inputs**
+
+- None (takes no arguments).
+
+**Outputs**
+
+- Prints configuration constants, KDF parameters, installed dependency versions, and password policy information to standard output as `key=value` lines.
+
+**Failure modes**
+
+- None (always succeeds and exits `0`).
 
 ## File Formats
 

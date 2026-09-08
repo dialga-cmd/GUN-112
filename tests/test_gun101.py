@@ -567,6 +567,12 @@ class TestCLI:
         assert hasattr(cli, 'decrypt')
         assert callable(cli.decrypt)
 
+    def test_cli_info_function_direct(self):
+        """Test the info function directly (for coverage)."""
+        from gun101 import cli
+        assert hasattr(cli, 'info')
+        assert callable(cli.info)
+
     def test_cli_safe_open_write_function_direct(self):
         """Test the safe_open_write function directly (for coverage)."""
         import os
@@ -1050,4 +1056,40 @@ class TestCLI:
                 f"Expected success when generating keyfile to safe relative path, but it failed: {result.stderr}"
             )
             assert os.path.exists(os.path.join(work_dir, key_file))
+
+    def test_cli_info_subcommand(self):
+        """Test that gun101 info runs via CLI and outputs key=value lines."""
+        import os
+        import subprocess
+        import sys
+
+        src_dir = os.path.join(os.path.dirname(__file__), '..', 'src')
+        env = os.environ.copy()
+        env['PYTHONPATH'] = src_dir
+
+        result = subprocess.run(
+            [sys.executable, '-m', 'gun101.cli', 'info'],
+            cwd=src_dir,
+            env=env,
+            capture_output=True,
+            text=True
+        )
+        assert result.returncode == 0, f"Expected 0 exit code, got {result.returncode}: {result.stderr}"
+        assert result.stderr == ""
+        lines = dict(line.split("=", 1) for line in result.stdout.strip().splitlines())
+        assert lines["protocol"] == "GUN-101"
+        assert lines["container_version"] == "2.1"
+        assert lines["argon2_time_cost"] == "4"
+        assert lines["argon2_memory_cost"] == "262144"
+        assert lines["argon2_parallelism"] == "4"
+        assert lines["argon2_hash_len"] == "32"
+        assert lines["argon2_salt_len"] == "32"
+        assert "cryptography_version" in lines
+        assert "argon2_cffi_version" in lines
+        assert lines["password_min_length"] == "10"
+        assert lines["password_require_uppercase"] == "true"
+        assert lines["password_require_lowercase"] == "true"
+        assert lines["password_require_digit"] == "true"
+        assert lines["password_require_special"] == "true"
+        assert "password_policy" in lines
 

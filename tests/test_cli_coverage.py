@@ -216,6 +216,43 @@ class TestKeyfileFingerprintInProcess:
         assert "Error:" in err
 
 
+class TestInfoInProcess:
+    def test_info_success(self):
+        out, err, exc = run(cli.info, make_arg())
+        assert exc is None
+        assert err == ""
+        lines = dict(line.split("=", 1) for line in out.strip().splitlines())
+        assert lines["protocol"] == "GUN-101"
+        assert lines["container_version"] == "2.1"
+        assert lines["argon2_time_cost"] == "4"
+        assert lines["argon2_memory_cost"] == "262144"
+        assert lines["argon2_parallelism"] == "4"
+        assert lines["argon2_hash_len"] == "32"
+        assert lines["argon2_salt_len"] == "32"
+        assert lines["cryptography_version"] != ""
+        assert lines["argon2_cffi_version"] != ""
+        assert lines["password_min_length"] == "10"
+        assert lines["password_require_uppercase"] == "true"
+        assert lines["password_require_lowercase"] == "true"
+        assert lines["password_require_digit"] == "true"
+        assert lines["password_require_special"] == "true"
+        assert "password_policy" in lines
+
+    def test_info_unknown_dependency_fallback(self, monkeypatch):
+        import importlib.metadata
+
+        def mock_version(pkg_name):
+            raise importlib.metadata.PackageNotFoundError(pkg_name)
+
+        monkeypatch.setattr(importlib.metadata, "version", mock_version)
+        out, err, exc = run(cli.info, make_arg())
+        assert exc is None
+        assert err == ""
+        lines = dict(line.split("=", 1) for line in out.strip().splitlines())
+        assert lines["cryptography_version"] == "unknown"
+        assert lines["argon2_cffi_version"] == "unknown"
+
+
 def run_main():
     out, err = io.StringIO(), io.StringIO()
     try:
@@ -228,6 +265,16 @@ def run_main():
 
 class TestMainDispatchInProcess:
     """Exercise main() and the argparse wiring so it is coverage-traceable."""
+
+    def test_main_info(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["gun101", "info"])
+        out, err, exc = run_main()
+        assert exc is None
+        assert err == ""
+        assert "protocol=GUN-101" in out
+        assert "container_version=2.1" in out
+        assert "cryptography_version=" in out
+        assert "argon2_cffi_version=" in out
 
     def test_main_encrypt(self, workdir, env_password, monkeypatch):
         with open("in.txt", "wb") as f:
