@@ -60,7 +60,7 @@ over a clever one.
 
 ## Prerequisites
 
-- **Python 3.9 or newer** (the package declares `requires-python = ">=3.9"`).
+- **Python 3.10 or newer** (the package declares `requires-python = ">=3.10"`).
 - **pip** with support for editable installs.
 - **git** and a [GitHub](https://github.com) account.
 - No existing cryptography background required for most tasks — but please read

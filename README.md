@@ -141,7 +141,7 @@ All errors produce generic messages (e.g., "Decryption failed") to avoid leaking
 
 ## Dependencies
 
-- Python >= 3.9
+- Python >= 3.10
 - argon2-cffi >= 23.1.0
 - cryptography >= 42.0.2
 
