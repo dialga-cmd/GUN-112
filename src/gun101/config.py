@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Aditya Raj
+# SPDX-License-Identifier: MIT
+
 """Configuration constants for GUN-101."""
 
 PROTOCOL = "GUN-101"

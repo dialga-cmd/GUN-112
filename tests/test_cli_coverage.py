@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Aditya Raj
+# SPDX-License-Identifier: MIT
+
 """In-process tests for the CLI, so that coverage can trace the cli module.
 
 The existing subprocess-based CLI tests verify behavior end-to-end, but the
@@ -9,6 +12,7 @@ import argparse
 import contextlib
 import io
 import os
+import sys
 
 import pytest
 
@@ -210,3 +214,85 @@ class TestKeyfileFingerprintInProcess:
         _, err, exc = run(cli.keyfile_fingerprint, make_arg(path="kf"))
         assert exc is not None and exc.code == 1
         assert "Error:" in err
+
+
+def run_main():
+    out, err = io.StringIO(), io.StringIO()
+    try:
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            cli.main()
+        return out.getvalue(), err.getvalue(), None
+    except SystemExit as exc:
+        return out.getvalue(), err.getvalue(), exc
+
+
+class TestMainDispatchInProcess:
+    """Exercise main() and the argparse wiring so it is coverage-traceable."""
+
+    def test_main_encrypt(self, workdir, env_password, monkeypatch):
+        with open("in.txt", "wb") as f:
+            f.write(b"hello")
+        monkeypatch.setattr(sys, "argv", ["gun101", "encrypt", "in.txt"])
+        out, err, exc = run_main()
+        assert exc is None
+        assert os.path.exists("in.txt.gun101")
+
+    def test_main_decrypt(self, workdir, env_password, monkeypatch):
+        with open("in.txt", "wb") as f:
+            f.write(b"payload")
+        monkeypatch.setattr(sys, "argv", ["gun101", "encrypt", "in.txt"])
+        run_main()
+        monkeypatch.setattr(sys, "argv", ["gun101", "decrypt", "in.txt.gun101", "--output", "out.txt"])
+        out, err, exc = run_main()
+        assert exc is None
+        with open("out.txt", "rb") as f:
+            assert f.read() == b"payload"
+
+    def test_main_generate_keyfile(self, workdir, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["gun101", "generate-keyfile", "my.kf"])
+        out, err, exc = run_main()
+        assert exc is None
+        assert os.path.exists("my.kf")
+
+    def test_main_keyfile_fingerprint(self, workdir, monkeypatch):
+        keyfile.generate_keyfile("my.kf")
+        monkeypatch.setattr(sys, "argv", ["gun101", "keyfile-fingerprint", "my.kf"])
+        out, err, exc = run_main()
+        assert exc is None
+        assert "Fingerprint (SHA-256):" in out
+
+    def test_main_unknown_subcommand(self, workdir, monkeypatch, capsys):
+        monkeypatch.setattr(sys, "argv", ["gun101", "frobnicate"])
+        with pytest.raises(SystemExit) as exc:
+            cli.main()
+        assert exc.value.code == 2
+
+    def test_main_encrypt_with_keyfile(self, workdir, env_password, monkeypatch):
+        keyfile.generate_keyfile("kf")
+        with open("in.txt", "wb") as f:
+            f.write(b"secret")
+        monkeypatch.setattr(
+            sys, "argv", ["gun101", "encrypt", "in.txt", "--keyfile", "kf"])
+        out, err, exc = run_main()
+        assert exc is None
+        monkeypatch.setattr(
+            sys, "argv", ["gun101", "decrypt", "in.txt.gun101", "--keyfile", "kf", "--output", "out.txt"])
+        out, err, exc = run_main()
+        assert exc is None
+        with open("out.txt", "rb") as f:
+            assert f.read() == b"secret"
+
+
+class TestGetPasswordPathInProcess:
+    def test_prompts_when_env_not_set(self, monkeypatch):
+        monkeypatch.delenv("GUN101_PASSWORD", raising=False)
+        monkeypatch.setattr("getpass.getpass", lambda prompt="Password: ": "M0nkeyP@ss!")
+        password = cli.get_password()
+        assert password == "M0nkeyP@ss!"
+
+    def test_generate_keyfile_oserror_branch(self, workdir):
+        with open("afile", "wb") as f:
+            f.write(b"x")
+        _, err, exc = run(cli.generate_keyfile, make_arg(path="afile/inner.kf"))
+        assert exc is not None and exc.code == 1
+        assert "Error creating keyfile" in err

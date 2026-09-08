@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Aditya Raj
+# SPDX-License-Identifier: MIT
+
 """Coverage for the validation branches of the crypto modules."""
 import pytest
 

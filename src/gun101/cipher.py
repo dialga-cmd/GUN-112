@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Aditya Raj
+# SPDX-License-Identifier: MIT
+
 """AES-256-GCM encryption and decryption."""
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 

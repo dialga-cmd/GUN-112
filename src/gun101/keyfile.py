@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Aditya Raj
+# SPDX-License-Identifier: MIT
+
 """Keyfile handling for two-factor protection."""
 import hashlib
 import os

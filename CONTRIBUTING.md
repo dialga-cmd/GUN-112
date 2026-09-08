@@ -35,6 +35,25 @@ include any of the following:
 - **Platform support** — Windows or macOS support for file permissions, path handling, and shell behaviour.
 - **Performance** — a faster hot path, so long as it never weakens the cryptographic guarantees.
 
+## Good first issues
+
+Issues labelled **`good first issue`** in the [issue tracker](https://github.com/dialga-cmd/gun101/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+are small, well-scoped tasks intended for new or casual contributors. Each one
+links to the code to touch and the tests to extend. Examples that have been
+sized to fit a single PR:
+
+- A **fuzzing harness** for the container parser (e.g. `hypothesis` or
+  `atheris`) targeting `decrypt_file` (see [ROADMAP.md](ROADMAP.md)).
+- A **`gun101 info` subcommand** that prints a container's cleartext header
+  without decrypting (see [ROADMAP.md](ROADMAP.md)).
+- **Windows file-permission support** for keyfiles so that `os.chmod`-style
+  restrictions work on NTFS (see [ROADMAP.md](ROADMAP.md)).
+- A **repeatable Argon2id benchmark** script so future parameter changes are
+  backed by measured numbers (see [ROADMAP.md](ROADMAP.md)).
+
+If you want to work on one of these (or propose your own small task), say so in
+a comment on the issue before opening a PR so work is not duplicated.
+
 Everything you contribute must match the project's design philosophy: simple,
 transparent, and correct. We prefer a boring, well-understood implementation
 over a clever one.
@@ -281,18 +300,52 @@ Then open a pull request against `main` using the provided
 [PR template](.github/pull_request_template.md). Make sure you fill in the
 security review checklist — every item matters.
 
-### What the review looks like
+### Code review standards
 
-- The maintainer reviews within a few days and runs `pytest tests/ -v` locally.
-- Security-relevant changes get extra scrutiny: the justification is checked
-  against [docs/SECURITY.md](docs/SECURITY.md) and
-  [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
-- Expect questions — cryptographic review is a conversation, not a formality.
-  Be ready to defend design choices with reasoning, not just code.
-- Changes that reduce parameters, loosen password policy, or weaken error
-  handling will be sent back with an explanation.
-- Once approved, the maintainer merges. You'll be credited in the changelog
-  and may be added to acknowledgements in the README.
+Review is mandatory: **no change is merged into `main` without review by a
+maintainer other than the author.** This applies to every pull request, whatever
+its size.
+
+**How review is conducted**
+
+- PRs are reviewed asynchronously in the GitHub pull request UI. The reviewer
+  reads the diff, runs the checks locally (`pytest tests/ -v`,
+  `ruff check src tests`, `bandit -r src -q`), and comments inline on
+  questionable lines.
+- The author and reviewer discuss inline until open questions are resolved,
+  then the reviewer approves or requests changes.
+- Only an approved PR is merged; the author does not merge their own approved
+  change without a second maintainer's explicit approval.
+
+**What must be checked**
+
+- Every diff line is read, not skimmed.
+- Security-relevant changes (anything touching `kdf.py`, `cipher.py`,
+  `handler.py`, `keyfile.py`, or the container format) are additionally checked
+  against the rules in [Security-specific contribution rules](#security-specific-contribution-rules):
+  the cryptographic justification, no hand-rolled primitives, no weakened
+  failure behaviour, constant-time comparisons only, `os.urandom` only for
+  secrets, and no widened error surface.
+- Tests are checked for the required positive + negative coverage, and the
+  coverage gate (≥80% statements, enforced by pytest-cov) must pass.
+- API/CLI changes must update `docs/CLI.md`; user-visible changes must update
+  `CHANGELOG.md` (and `docs/UPGRADING.md` when upgrade impact exists).
+- The DCO sign-off (see above) must be present on every commit.
+
+**What is required to be acceptable**
+
+- The change does what it claims, matches the documented design, and contains
+  no known issues that argue against inclusion.
+- All CI checks pass and the PR checklist in the template is complete.
+- For security-relevant changes: the reasoning holds up under the reviewer's
+  questioning, and no security property is weakened.
+- The reviewer records their decision (approve / request changes) on the PR.
+
+The maintainer reviews within a few days and runs `pytest tests/ -v` locally.
+Expect questions — cryptographic review is a conversation, not a formality.
+Be ready to defend design choices with reasoning, not just code. Changes that
+reduce parameters, loosen password policy, or weaken error handling will be
+sent back with an explanation.
 
 Please treat review comments as engineering feedback, not criticism. A
 respectful technical debate about a cryptographic decision is exactly the kind

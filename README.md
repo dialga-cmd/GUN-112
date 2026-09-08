@@ -196,6 +196,7 @@ The full process — supported versions, what is in and out of scope, how to str
 - [Security Design](docs/SECURITY.md) — what the tool does and does not protect against
 - [Threat Model](docs/THREAT_MODEL.md) — threat actors, mitigations, and scope
 - [Assurance Case](docs/ASSURANCE_CASE.md) — argument that the security requirements are met
+- [Security Review](docs/SECURITY_REVIEW.md) — documented security review of the current release
 - [Releasing and verifying releases](docs/RELEASING.md) — how releases are signed and verified
 - [Security Policy](SECURITY.md) — how to report vulnerabilities
 - [Governance](GOVERNANCE.md) — roles, decision-making, and business continuity

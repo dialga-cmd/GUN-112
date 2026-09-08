@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Aditya Raj
+# SPDX-License-Identifier: MIT
+
 """High-level encryption and decryption handler."""
 import base64
 import hmac

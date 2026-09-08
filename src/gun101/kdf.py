@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Aditya Raj
+# SPDX-License-Identifier: MIT
+
 """Key derivation using Argon2id."""
 import argon2.low_level
 
