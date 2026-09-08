@@ -22,3 +22,7 @@ jobs:
         run: python -m build
       - name: Publish package
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # PEP 740: cryptographically sign the release with a short-lived
+          # OIDC token; the signing key never resides on PyPI.
+          attestations: true

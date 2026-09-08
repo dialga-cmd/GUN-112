@@ -165,6 +165,9 @@ Run the test suite with:
 pytest tests/ -v
 ```
 
+Coverage of the `gun101` package is measured with `pytest-cov` and must stay at
+80% or above (see `pyproject.toml`); recent runs report ~88%.
+
 ## Feedback and Contributing
 
 Found a bug or have a feature request? Please [open a GitHub issue](https://github.com/dialga-cmd/gun101/issues/new/choose) — use the bug report or feature request template.
@@ -184,6 +187,20 @@ What we commit to:
 - Coordinated public disclosure only after a patched release is available
 
 The full process — supported versions, what is in and out of scope, how to structure a report, and how reporters are credited — is in [SECURITY.md](SECURITY.md).
+
+## Project Documentation
+
+- [Architecture](docs/ARCHITECTURE.md) — high-level design of the modules and data flow
+- [Command-Line Reference](docs/CLI.md) — external interface, inputs, outputs, exit codes, formats
+- [Upgrading](docs/UPGRADING.md) — how to upgrade and what changed between versions
+- [Security Design](docs/SECURITY.md) — what the tool does and does not protect against
+- [Threat Model](docs/THREAT_MODEL.md) — threat actors, mitigations, and scope
+- [Assurance Case](docs/ASSURANCE_CASE.md) — argument that the security requirements are met
+- [Releasing and verifying releases](docs/RELEASING.md) — how releases are signed and verified
+- [Security Policy](SECURITY.md) — how to report vulnerabilities
+- [Governance](GOVERNANCE.md) — roles, decision-making, and business continuity
+- [Roadmap](ROADMAP.md) — what the project intends to do and not do over the next year
+- [Contributing](CONTRIBUTING.md) — how to contribute and the required standards
 
 ## License
 

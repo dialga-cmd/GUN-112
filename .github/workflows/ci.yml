@@ -28,6 +28,15 @@ jobs:
       - name: Build distribution from source
         run: python -m build
 
+      - name: Verify reproducible build (SOURCE_DATE_EPOCH)
+        run: |
+          mkdir -p dist-a dist-b
+          SOURCE_DATE_EPOCH=1700000000 python -m build --sdist --wheel --outdir dist-a > /dev/null
+          SOURCE_DATE_EPOCH=1700000000 python -m build --sdist --wheel --outdir dist-b > /dev/null
+          (cd dist-a && sha256sum *) | cut -d' ' -f1 > /tmp/sha-a
+          (cd dist-b && sha256sum *) | cut -d' ' -f1 > /tmp/sha-b
+          diff /tmp/sha-a /tmp/sha-b && echo "Build is reproducible"
+
       - name: Lint (ruff)
         run: python -m ruff check src tests
 
@@ -37,5 +46,5 @@ jobs:
       - name: Dependency vulnerability audit (pip-audit)
         run: python -m pip_audit -r requirements.txt
 
-      - name: Run tests
+      - name: Run tests (with coverage gate)
         run: python -X dev -m pytest tests/ -v

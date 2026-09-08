@@ -113,6 +113,15 @@ A passing run looks like this (the exact count may grow as tests are added):
 53 passed in 47.85s
 ```
 
+The suite is run under `pytest-cov`: statement coverage of the `gun101` package
+is **required to stay at 80% or above**, otherwise `pytest` exits non-zero (see
+`[tool.pytest.ini_options]` in `pyproject.toml`). Run the suite with coverage
+explicitly if you want to see the per-module breakdown:
+
+```bash
+pytest --cov-report=term-missing
+```
+
 Every test must pass before any PR is merged. If you are changing something in
 the key-derivation, encryption, or decryption paths, `pytest tests/ -v` passing
 is necessary but not sufficient — your PR description must also carry the
@@ -144,6 +153,10 @@ These are enforced by the maintainer during review:
   Reducing any of these weakens every file encrypted with the library. Any
   proposal to *raise* them is welcome and should come with benchmark data and a
   justification in the PR description.
+- Follow **PEP 8** (the official Python style guide). This is enforced
+  automatically with **ruff** across the rule sets `E`, `F`, `W`, `I`, and `B`
+  (see `[tool.ruff]` in `pyproject.toml`), so make sure `ruff check src tests`
+  is clean before opening a PR.
 - Follow the existing style: plain Python, no third-party libraries beyond the
   declared dependencies, no cleverness for its own sake.
 - Keep changes focused. A PR that mixes a bug fix with an unrelated refactor is
@@ -212,6 +225,20 @@ If you add a CLI subcommand, test it end-to-end with `subprocess` like the
 existing CLI tests do.
 
 ## Submitting a pull request
+
+### Developer Certificate of Origin
+
+By contributing, you certify that your contribution is your own (or that you
+are authorized to submit it) under the project's MIT license, as described by
+the [Developer Certificate of Origin, version 1.1](https://developercertificate.org/)
+([full text](DCO) in this repository). Add a sign-off line to the end of every
+commit message:
+
+```text
+Signed-off-by: Your Name <your.email@example.com>
+```
+
+Use `git commit -s` to add this automatically from your git identity.
 
 ### Branch naming
 

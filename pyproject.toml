@@ -31,7 +31,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/adityarai108/gun101"
+Homepage = "https://github.com/dialga-cmd/gun101"
 
 [project.scripts]
 gun101 = "gun101.cli:main"
@@ -50,6 +50,7 @@ packages = ["src/gun101"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--cov=gun101 --cov-report=term-missing --cov-fail-under=80"
 
 [tool.ruff]
 target-version = "py39"
