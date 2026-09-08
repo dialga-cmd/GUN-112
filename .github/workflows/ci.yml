@@ -30,11 +30,12 @@ jobs:
 
       - name: Verify reproducible build (SOURCE_DATE_EPOCH)
         run: |
-          mkdir -p dist-a dist-b
-          SOURCE_DATE_EPOCH=1700000000 python -m build --sdist --wheel --outdir dist-a > /dev/null
-          SOURCE_DATE_EPOCH=1700000000 python -m build --sdist --wheel --outdir dist-b > /dev/null
-          (cd dist-a && sha256sum *) | cut -d' ' -f1 > /tmp/sha-a
-          (cd dist-b && sha256sum *) | cut -d' ' -f1 > /tmp/sha-b
+          # Build into $RUNNER_TEMP (outside the workspace) so the sdist never
+          # captures build output directories, and pin SOURCE_DATE_EPOCH.
+          SOURCE_DATE_EPOCH=1700000000 python -m build --sdist --wheel --outdir "$RUNNER_TEMP/dist-a" > /dev/null
+          SOURCE_DATE_EPOCH=1700000000 python -m build --sdist --wheel --outdir "$RUNNER_TEMP/dist-b" > /dev/null
+          (cd "$RUNNER_TEMP/dist-a" && sha256sum *) | cut -d' ' -f1 > /tmp/sha-a
+          (cd "$RUNNER_TEMP/dist-b" && sha256sum *) | cut -d' ' -f1 > /tmp/sha-b
           diff /tmp/sha-a /tmp/sha-b && echo "Build is reproducible"
 
       - name: Lint (ruff)
