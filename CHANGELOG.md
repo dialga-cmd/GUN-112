@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Full external-interface reference documentation for the CLI in
   `docs/CLI.md` (all commands, inputs, outputs, environment variables, exit
   codes, and the container file format).
+- Read-only `gun101 info` subcommand that outputs configuration parameters,
+  KDF settings, installed dependency versions, and password policy summary as
+  key=value lines.
 - README section on how to report bugs and contribute.
 
 `pyproject.toml` version will be bumped when a release is cut from these

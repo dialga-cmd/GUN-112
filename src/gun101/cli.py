@@ -4,10 +4,11 @@
 """Command-line interface for GUN-101."""
 import argparse
 import getpass
+import importlib.metadata
 import os
 import sys
 
-from . import handler, keyfile
+from . import config, handler, keyfile
 
 
 def get_password():
@@ -141,6 +142,37 @@ def keyfile_fingerprint(args):
 
     print(f"Fingerprint (SHA-256): {fingerprint}")
 
+def info(args):
+    """Handle the info subcommand."""
+    def _get_pkg_version(name: str) -> str:
+        try:
+            return importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            return "unknown"
+
+    fields = [
+        ("protocol", config.PROTOCOL),
+        ("container_version", config.CONTAINER_VERSION),
+        ("argon2_time_cost", config.ARGON2_TIME_COST),
+        ("argon2_memory_cost", config.ARGON2_MEMORY_COST),
+        ("argon2_parallelism", config.ARGON2_PARALLELISM),
+        ("argon2_hash_len", config.ARGON2_HASH_LEN),
+        ("argon2_salt_len", config.ARGON2_SALT_LEN),
+        ("cryptography_version", _get_pkg_version("cryptography")),
+        ("argon2_cffi_version", _get_pkg_version("argon2-cffi")),
+        ("password_min_length", 10),
+        ("password_require_uppercase", "true"),
+        ("password_require_lowercase", "true"),
+        ("password_require_digit", "true"),
+        ("password_require_special", "true"),
+        (
+            "password_policy",
+            "min_length 10, uppercase required, lowercase required, digit required, special character required",
+        ),
+    ]
+    for key, value in fields:
+        print(f"{key}={value}")
+
 def main():
     parser = argparse.ArgumentParser(
         description="GUN-101: A simple, secure file encryption tool using "
@@ -173,6 +205,10 @@ def main():
     fp_parser = subparsers.add_parser('keyfile-fingerprint', help='Show fingerprint of an existing keyfile')
     fp_parser.add_argument('path', help='Path to the keyfile')
     fp_parser.set_defaults(func=keyfile_fingerprint)
+
+    # Info subcommand
+    info_parser = subparsers.add_parser('info', help='Show system and protocol configuration info')
+    info_parser.set_defaults(func=info)
 
     args = parser.parse_args()
     args.func(args)
