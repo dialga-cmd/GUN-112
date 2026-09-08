@@ -1,7 +1,8 @@
 """AES-256-GCM encryption and decryption."""
-import os
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
 from . import config
+
 
 def encrypt(plaintext: bytes, key: bytes, nonce: bytes, associated_data: bytes = None) -> tuple[bytes, bytes]:
     """
@@ -76,4 +77,4 @@ def decrypt(nonce: bytes, ciphertext: bytes, tag: bytes, key: bytes, associated_
         return plaintext
     except Exception:
         # Any error (invalid tag, wrong key, etc.) results in a generic error
-        raise ValueError("Decryption failed")
+        raise ValueError("Decryption failed") from None

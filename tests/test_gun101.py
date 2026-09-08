@@ -3,8 +3,10 @@ import base64
 import json
 import os
 import tempfile
+
 import pytest
-from gun101 import handler, keyfile, kdf, cipher, config
+
+from gun101 import config, handler, kdf, keyfile
 
 # Strong passwords for testing
 STRONG_PASSWORD = "Str0ngP@ssw0rd!"  # 13 chars: upper, lower, digit, special
@@ -478,6 +480,19 @@ class TestKeyfile:
         password = STRONG_PASSWORD
         with tempfile.TemporaryDirectory() as tmpdir:
             keyfile_path = os.path.join(tmpdir, "keyfile")
+            old_cwd = os.getcwd()
+            os.chdir(tmpdir)
+            try:
+                keyfile.generate_keyfile(keyfile_path)
+            finally:
+                os.chdir(old_cwd)
+            container = handler.encrypt_file(data, password, keyfile_path)
+            with open(keyfile_path, 'rb') as f:
+                keyfile_bytes = f.read()
+            c = json.loads(container.decode())
+            expected = keyfile.keyfile_fingerprint(keyfile_bytes)
+            assert c["keyfile_fingerprint"] == expected
+            assert c["keyfile_required"] is True
 
     def test_keyfile_fingerprint_uses_hmac_compare_digest(self):
         """Ensure that keyfile fingerprint comparison uses hmac.compare_digest for constant-time comparison."""
@@ -487,12 +502,15 @@ class TestKeyfile:
             content = f.read()
         # We expect to see a line that uses hmac.compare_digest for the fingerprint comparison
         assert 'hmac.compare_digest' in content
-        # We'll also check that there is no direct string comparison (using !=) for the fingerprints in the decrypt function.
-        # We'll do a simple check: if the string 'actual_fingerprint != expected_fingerprint' appears in the file, then fail.
+        # We'll also check that there is no direct string comparison (using !=)
+        # for the fingerprints in the decrypt function. If the string
+        # 'actual_fingerprint != expected_fingerprint' appears in the file,
+        # then fail.
         if 'actual_fingerprint != expected_fingerprint' in content:
             self.fail('Found direct string comparison of fingerprints: actual_fingerprint != expected_fingerprint')
         # Additionally, we can do a functional test to ensure the fingerprint is used correctly.
         import tempfile
+
         from gun101 import handler, keyfile
         data = b"test data"
         password = "Str0ngP@ssw0rd!"  # meets policy
@@ -525,9 +543,9 @@ class TestCLI:
 
     def test_cli_encrypt_function_direct(self):
         """Test the encrypt function directly (for coverage)."""
-        from gun101 import cli
         import argparse
-        import sys
+
+        from gun101 import cli
 
         # Mock args
         args = argparse.Namespace()
@@ -548,9 +566,10 @@ class TestCLI:
 
     def test_cli_safe_open_write_function_direct(self):
         """Test the safe_open_write function directly (for coverage)."""
-        from gun101 import cli
-        import tempfile
         import os
+        import tempfile
+
+        from gun101 import cli
 
         with tempfile.TemporaryDirectory() as tmpdir:
             old_cwd = os.getcwd()
@@ -590,9 +609,9 @@ class TestCLI:
 
     def test_cli_rejects_password_argument(self):
         """Ensure that the CLI does not accept --password argument."""
+        import os
         import subprocess
         import sys
-        import os
 
         # Run the CLI module from the src directory
         src_dir = os.path.join(os.path.dirname(__file__), '..', 'src')
@@ -623,28 +642,59 @@ class TestCLI:
 
     def test_cli_works_with_env_var_password(self):
         """Test that the CLI works when password is provided via environment variable."""
+        import os
         import subprocess
         import sys
         import tempfile
-        import os
 
         src_dir = os.path.join(os.path.dirname(__file__), '..', 'src')
 
         with tempfile.TemporaryDirectory() as tmpdir:
             plain_file = os.path.join(tmpdir, 'plain.txt')
             enc_file = os.path.join(tmpdir, 'plain.txt.gun101')
-            key_file = os.path.join(tmpdir, 'keyfile')
+            dec_file = os.path.join(tmpdir, 'decrypted.txt')
 
             # Create a plain file
             with open(plain_file, 'wb') as f:
                 f.write(b'test data')
 
+            # Set the password in the environment
+            env = os.environ.copy()
+            env['PYTHONPATH'] = src_dir
+            env['GUN101_PASSWORD'] = 'Str0ngP@ssw0rd!'
+
+            # Encrypt
+            result = subprocess.run(
+                [sys.executable, '-m', 'gun101.cli', 'encrypt', plain_file],
+                cwd=tmpdir,
+                env=env,
+                capture_output=True,
+                text=True
+            )
+            assert result.returncode == 0, f"Encryption failed: {result.stderr}"
+            assert os.path.exists(enc_file)
+
+            # Decrypt back and verify contents
+            result = subprocess.run(
+                [sys.executable, '-m', 'gun101.cli', 'decrypt', enc_file, '--output', dec_file],
+                cwd=tmpdir,
+                env=env,
+                capture_output=True,
+                text=True
+            )
+            assert result.returncode == 0, f"Decryption failed: {result.stderr}"
+            with open(dec_file, 'rb') as f:
+                assert f.read() == b'test data'
+
+            # Clean up the environment variable to avoid leaking
+            del env['GUN101_PASSWORD']
+
     def test_cli_output_path_symlink_rejected(self):
         """Ensure that the CLI rejects writing output to a symlink."""
+        import os
         import subprocess
         import sys
         import tempfile
-        import os
 
         src_dir = os.path.join(os.path.dirname(__file__), '..', 'src')
 
@@ -691,7 +741,8 @@ class TestCLI:
 
             # Try to encrypt again, outputting to the symlink (should fail)
             result = subprocess.run(
-                [sys.executable, '-m', 'gun101.cli', 'encrypt', plain_file, '--keyfile', key_file, '--output', link_file],
+                [sys.executable, '-m', 'gun101.cli', 'encrypt', plain_file,
+                '--keyfile', key_file, '--output', link_file],
                 cwd=tmpdir,
                 env=env,
                 capture_output=True,
@@ -706,10 +757,10 @@ class TestCLI:
 
     def test_cli_output_path_traversal_rejected(self):
         """Ensure that the CLI rejects writing output to a path that escapes the intended directory."""
+        import os
         import subprocess
         import sys
         import tempfile
-        import os
 
         src_dir = os.path.join(os.path.dirname(__file__), '..', 'src')
 
@@ -758,13 +809,16 @@ class TestCLI:
 
             # Try to encrypt and write to a path that escapes the work directory
             result = subprocess.run(
-                [sys.executable, '-m', 'gun101.cli', 'encrypt', plain_file, '--keyfile', key_file, '--output', output_file],
+                [sys.executable, '-m', 'gun101.cli', 'encrypt', plain_file,
+                '--keyfile', key_file, '--output', output_file],
                 cwd=work_dir,
                 env=env,
                 capture_output=True,
                 text=True
             )
-            assert result.returncode != 0, f"Expected error when writing to escaping path, but it succeeded: {result.stdout}"
+            assert result.returncode != 0, (
+                f"Expected error when writing to escaping path, but it succeeded: {result.stdout}"
+            )
             # Check that the error message indicates the path attempts to escape
             assert "Output path attempts to escape the intended directory" in result.stderr
 
@@ -773,10 +827,10 @@ class TestCLI:
 
     def test_cli_output_path_safe_relative_allowed(self):
         """Ensure that the CLI allows writing output to a safe relative path."""
+        import os
         import subprocess
         import sys
         import tempfile
-        import os
 
         src_dir = os.path.join(os.path.dirname(__file__), '..', 'src')
 
@@ -812,13 +866,16 @@ class TestCLI:
 
             # Encrypt (relative to work_dir)
             result = subprocess.run(
-                [sys.executable, '-m', 'gun101.cli', 'encrypt', plain_file, '--keyfile', key_file, '--output', output_file],
+                [sys.executable, '-m', 'gun101.cli', 'encrypt', plain_file,
+                '--keyfile', key_file, '--output', output_file],
                 cwd=work_dir,
                 env=env,
                 capture_output=True,
                 text=True
             )
-            assert result.returncode == 0, f"Expected success when writing to safe relative path, but it failed: {result.stderr}"
+            assert result.returncode == 0, (
+                f"Expected success when writing to safe relative path, but it failed: {result.stderr}"
+            )
             assert os.path.exists(os.path.join(work_dir, output_file))
 
             # Clean up the environment variable to avoid leaking
@@ -826,10 +883,10 @@ class TestCLI:
 
     def test_cli_input_path_symlink_allowed(self):
         """Ensure that the CLI allows reading input from a symlink."""
+        import os
         import subprocess
         import sys
         import tempfile
-        import os
 
         src_dir = os.path.join(os.path.dirname(__file__), '..', 'src')
 
@@ -896,10 +953,10 @@ class TestCLI:
 
     def test_keyfile_generate_path_symlink_rejected(self):
         """Ensure that the keyfile generation rejects writing to a symlink."""
+        import os
         import subprocess
         import sys
         import tempfile
-        import os
 
         src_dir = os.path.join(os.path.dirname(__file__), '..', 'src')
 
@@ -921,16 +978,18 @@ class TestCLI:
                 capture_output=True,
                 text=True
             )
-            assert result.returncode != 0, f"Expected error when generating keyfile to symlink, but it succeeded: {result.stdout}"
+            assert result.returncode != 0, (
+                f"Expected error when generating keyfile to symlink, but it succeeded: {result.stdout}"
+            )
             # Check that the error message indicates the symlink was rejected
             assert "Output path is a symlink; refusing to write" in result.stderr
 
     def test_keyfile_generate_path_traversal_rejected(self):
         """Ensure that the keyfile generation rejects writing to a path that escapes the intended directory."""
+        import os
         import subprocess
         import sys
         import tempfile
-        import os
 
         src_dir = os.path.join(os.path.dirname(__file__), '..', 'src')
 
@@ -952,16 +1011,18 @@ class TestCLI:
                 capture_output=True,
                 text=True
             )
-            assert result.returncode != 0, f"Expected error when generating keyfile to escaping path, but it succeeded: {result.stdout}"
+            assert result.returncode != 0, (
+                f"Expected error when generating keyfile to escaping path, but it succeeded: {result.stdout}"
+            )
             # Check that the error message indicates the path attempts to escape
             assert "Output path attempts to escape the intended directory" in result.stderr
 
     def test_keyfile_generate_path_safe_relative_allowed(self):
         """Ensure that the keyfile generation allows writing to a safe relative path."""
+        import os
         import subprocess
         import sys
         import tempfile
-        import os
 
         src_dir = os.path.join(os.path.dirname(__file__), '..', 'src')
 
@@ -982,6 +1043,8 @@ class TestCLI:
                 capture_output=True,
                 text=True
             )
-            assert result.returncode == 0, f"Expected success when generating keyfile to safe relative path, but it failed: {result.stderr}"
+            assert result.returncode == 0, (
+                f"Expected success when generating keyfile to safe relative path, but it failed: {result.stderr}"
+            )
             assert os.path.exists(os.path.join(work_dir, key_file))
 

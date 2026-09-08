@@ -3,8 +3,9 @@ import argparse
 import getpass
 import os
 import sys
-from . import handler
-from . import keyfile
+
+from . import handler, keyfile
+
 
 def get_password():
     """Get password from environment variable or prompt.

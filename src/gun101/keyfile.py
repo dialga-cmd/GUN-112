@@ -1,7 +1,9 @@
 """Keyfile handling for two-factor protection."""
-import os
 import hashlib
+import os
+
 from . import config
+
 
 def safe_open_write(path):
     """Open a file for writing in binary mode, after checking for symlinks and path safety.
@@ -43,7 +45,7 @@ def generate_keyfile(path: str) -> None:
         with safe_open_write(path) as f:
             f.write(keyfile_bytes)
     except OSError as e:
-        raise OSError(f"Error creating keyfile: {e}")
+        raise OSError(f"Error creating keyfile: {e}") from None
     # Restrict permissions to owner read/write only
     os.chmod(path, 0o600)
 

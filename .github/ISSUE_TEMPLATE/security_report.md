@@ -57,4 +57,4 @@ remain anonymous.
   the reporter before coordination with the wider community, and disclosed only
   after a patched release is available.
 
-Full details are in [SECURITY_POLICY.md](SECURITY_POLICY.md).
+Full details are in [SECURITY.md](SECURITY.md).

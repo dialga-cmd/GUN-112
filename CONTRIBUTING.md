@@ -20,7 +20,7 @@ The authoritative security documents are:
 
 - [Security Design](docs/SECURITY.md) — the cryptographic construction and its guarantees
 - [Threat Model](docs/THREAT_MODEL.md) — threat actors, mitigations, and what is out of scope
-- [Security Policy](SECURITY_POLICY.md) — how to report vulnerabilities
+- [Security Policy](SECURITY.md) — how to report vulnerabilities
 
 ## What kinds of contributions are needed
 
@@ -180,6 +180,12 @@ years later, in situations you will never see.
 
 ## Writing tests
 
+**Project test policy:** as major new functionality is added to the software,
+tests covering that functionality are added to the automated test suite at the
+same time, in the same pull request. A change that adds or changes behavior
+without corresponding tests will not be merged. New tests must pass locally
+(`pytest tests/ -v`) and in continuous integration before the change merges.
+
 Every new security-affecting function must have **both** a positive test and a
 negative test:
 
@@ -286,7 +292,7 @@ What we commit to when you report:
 - You will be credited in the changelog and README acknowledgements unless you
   request anonymity.
 
-Full details are in [SECURITY_POLICY.md](SECURITY_POLICY.md).
+Full details are in [SECURITY.md](SECURITY.md).
 
 ## Good first issues
 

@@ -2,6 +2,12 @@
 
 A simple, secure file encryption tool using **AES-256-GCM** and **Argon2id**.
 
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/14526/badge)](https://www.bestpractices.dev/projects/14526)
+
+## What problem does this solve?
+
+If a laptop is lost, a cloud drive is breached, or a USB stick falls into the wrong hands, the files on it are exposed. GUN-101 protects files at rest: it encrypts them so that only someone with the correct password (and, optionally, a separate keyfile) can read them, and any tampering with an encrypted file is detected and rejected before it is opened.
+
 ## Overview
 
 GUN-101 encrypts files with authenticated encryption, providing confidentiality and integrity. It supports two modes:
@@ -81,6 +87,10 @@ Prints the SHA-256 fingerprint to confirm you have the correct keyfile.
 
 ## Command Reference
 
+The complete reference for the external interface — every command, input,
+output, environment variable, exit code, and the container file format — is in
+[docs/CLI.md](docs/CLI.md). A summary follows:
+
 ```
 gun101 encrypt <file> [--keyfile <path>] [--output <path>]
   Encrypts <file>. If --output not given, writes to <file>.gun101
@@ -154,6 +164,26 @@ Run the test suite with:
 ```bash
 pytest tests/ -v
 ```
+
+## Feedback and Contributing
+
+Found a bug or have a feature request? Please [open a GitHub issue](https://github.com/dialga-cmd/gun101/issues/new/choose) — use the bug report or feature request template.
+
+Want to contribute? Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, coding standards, and security-sensitive contribution rules, then open a pull request.
+
+**Security vulnerabilities must not be reported as public issues.** Report them privately by emailing `adityaraj1234@duck.com` (see [Reporting a Security Vulnerability](#reporting-a-security-vulnerability)).
+
+## Reporting a Security Vulnerability
+
+GUN-101 treats security reports with the highest priority. **Do not open a public GitHub issue for a security vulnerability.** Instead, email the maintainer directly at **adityaraj1234@duck.com** with the subject prefix `[GUN101-SEC]`.
+
+What we commit to:
+
+- Acknowledgement of receipt within **48 hours**
+- A fix timeline within **7 days**
+- Coordinated public disclosure only after a patched release is available
+
+The full process — supported versions, what is in and out of scope, how to structure a report, and how reporters are credited — is in [SECURITY.md](SECURITY.md).
 
 ## License
 

@@ -1,6 +1,8 @@
 """Key derivation using Argon2id."""
 import argon2.low_level
+
 from . import config
+
 
 def derive_key(password: str, salt: bytes, keyfile_bytes: bytes = None) -> bytes:
     """

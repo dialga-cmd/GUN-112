@@ -7,8 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-No unreleased changes yet. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to
-contribute.
+### Added
+
+- Full external-interface reference documentation for the CLI in
+  `docs/CLI.md` (all commands, inputs, outputs, environment variables, exit
+  codes, and the container file format).
+- README section on how to report bugs and contribute.
+
+`pyproject.toml` version will be bumped when a release is cut from these
+changes. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute.
 
 ## [2.1.0] - 2026-08-09
 

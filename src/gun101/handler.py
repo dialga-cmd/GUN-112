@@ -1,13 +1,11 @@
 """High-level encryption and decryption handler."""
-import json
 import base64
+import hmac
+import json
 import os
 import string
-import hmac
-from . import config
-from . import kdf
-from . import cipher
-from . import keyfile
+
+from . import cipher, config, kdf, keyfile
 
 
 def validate_password(password: str) -> None:
@@ -40,7 +38,8 @@ def encrypt_file(file_data: bytes, password: str, keyfile_path: str = None) -> b
 
     Args:
         file_data: The file content to encrypt (bytes).
-        password: The user password (must be at least 10 characters with uppercase, lowercase, digit, and special character).
+        password: The user password (must be at least 10 characters with uppercase,
+        lowercase, digit, and special character).
         keyfile_path: Optional path to a keyfile for two-factor mode.
 
     Returns:
@@ -109,7 +108,8 @@ def decrypt_file(container_data: bytes, password: str, keyfile_path: str = None)
 
     Args:
         container_data: The encrypted container (JSON bytes).
-        password: The user password (must be at least 10 characters with uppercase, lowercase, digit, and special character).
+        password: The user password (must be at least 10 characters with uppercase,
+        lowercase, digit, and special character).
         keyfile_path: Optional path to keyfile (required if container indicates keyfile_required).
 
     Returns:
@@ -125,7 +125,7 @@ def decrypt_file(container_data: bytes, password: str, keyfile_path: str = None)
     try:
         container = json.loads(container_data.decode('utf-8'))
     except (json.JSONDecodeError, UnicodeDecodeError):
-        raise ValueError("Decryption failed")
+        raise ValueError("Decryption failed") from None
 
     # Step 2: Verify protocol and version
     if container.get("protocol") != config.PROTOCOL:
@@ -157,7 +157,7 @@ def decrypt_file(container_data: bytes, password: str, keyfile_path: str = None)
         ciphertext = base64.b64decode(container["ciphertext"])
         tag = base64.b64decode(container["tag"])
     except (KeyError, ValueError):
-        raise ValueError("Decryption failed")
+        raise ValueError("Decryption failed") from None
 
     # Step 6: Derive key
     key = kdf.derive_key(password, salt, keyfile_bytes)
@@ -178,7 +178,7 @@ def decrypt_file(container_data: bytes, password: str, keyfile_path: str = None)
             plaintext = cipher.decrypt(nonce, ciphertext, tag, key, header_bytes)
     except Exception:
         # Any error (invalid tag, wrong key, etc.) results in a generic error
-        raise ValueError("Decryption failed")
+        raise ValueError("Decryption failed") from None
     finally:
         # Wipe key from memory
         key = bytes(config.AES_KEY_LEN)  # Overwrite with zeros

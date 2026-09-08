@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install build and dev dependencies
+        run: |
+          python -m pip install --upgrade pip build
+          python -m pip install -e ".[dev]"
+
+      - name: Build distribution from source
+        run: python -m build
+
+      - name: Lint (ruff)
+        run: python -m ruff check src tests
+
+      - name: Static analysis (bandit)
+        run: python -m bandit -r src -q
+
+      - name: Dependency vulnerability audit (pip-audit)
+        run: python -m pip_audit -r requirements.txt
+
+      - name: Run tests
+        run: python -X dev -m pytest tests/ -v

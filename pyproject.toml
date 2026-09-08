@@ -39,7 +39,10 @@ gun101 = "gun101.cli:main"
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
-    "pytest-cov>=4.0.0"
+    "pytest-cov>=4.0.0",
+    "ruff>=0.5.0",
+    "bandit>=1.7.0",
+    "pip-audit>=2.0.0"
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -47,3 +50,10 @@ packages = ["src/gun101"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B"]
