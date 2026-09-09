@@ -4,7 +4,7 @@ This roadmap describes what GUN-101 intends to do — and explicitly not do — 
 the next year. It is a living document; items may be reordered based on
 feedback, and anything here may evolve as issues are discussed.
 
-Last updated: 2026-09-09. Current release: 2.1.1.
+Last updated: 2026-09-09. Current release: 2.1.2.
 
 ## Goals for the next year
 

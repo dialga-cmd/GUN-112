@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.2] - 2026-09-09
+
+### Fixed
+
+- Normalized path-containment checks in `cli.safe_open_write()` and
+  `keyfile.safe_open_write()` using `os.path.normcase()` so paths differing
+  only by letter case are handled consistently on case-insensitive
+  filesystems (Windows/macOS), and cross-drive escape attempts are correctly
+  rejected as "Output path attempts to escape the intended directory".
+
 ## [2.1.1] - 2026-09-09
 
 ### Added
