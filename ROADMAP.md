@@ -4,18 +4,25 @@ This roadmap describes what GUN-101 intends to do — and explicitly not do — 
 the next year. It is a living document; items may be reordered based on
 feedback, and anything here may evolve as issues are discussed.
 
-Last updated: 2026-09-08. Current release: 2.1.0.
+Last updated: 2026-09-09. Current release: 2.1.1.
 
 ## Goals for the next year
+
+### Completed
+
+- **`gun101 info` subcommand.** Inspect program and container configuration
+  (protocol, version, Argon2 parameters, library versions) without decrypting.
+- **Argon2id parameter benchmarking.** A repeatable benchmark script
+  (`scripts/benchmark_kdf.py`) so that any future parameter changes are
+  justified with measured time and memory numbers.
+- **Fuzzing harness.** Hypothesis-based property fuzz tests for container
+  parsing (`tests/test_fuzz_parser.py`) targeting `decrypt_file`.
 
 ### Near term (2–3 months)
 
 - **Co-maintainer for the project.** Recruit and onboard a second maintainer so
   the bus factor reaches 2 and releases can be cut if the current maintainer is
   unavailable (see [GOVERNANCE.md](GOVERNANCE.md)).
-- **`gun101 info` subcommand.** Inspect a `.gun101` container's cleartext
-  header (protocol, version, whether a keyfile is required, and the stored
-  keyfile fingerprint) without decrypting.
 - **Windows file-permission support for keyfiles.** `os.chmod(path, 0o600)` is
   POSIX-only; add correct handling on Windows (NTFS ACLs or a documented,
   tested fallback).
@@ -25,10 +32,6 @@ Last updated: 2026-09-08. Current release: 2.1.0.
 - **Entropy-based password strength check.** Integrate a well-audited strength
   checker (e.g. `zxcvbn`) as an optional check on top of the existing
   composition policy.
-- **Argon2id parameter benchmarking.** A repeatable benchmark script so that any
-  future parameter changes are justified with measured time and memory numbers.
-- **Fuzzing harness.** Add a fuzzing harness for container parsing and the CLI
-  (e.g. via `hypothesis` or `atheris`) targeting `decrypt_file`.
 
 ### Longer term (6–12 months)
 

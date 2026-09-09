@@ -7,15 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-09-09
+
 ### Added
 
+- Hypothesis-based property fuzz tests for the container parser in
+  `tests/test_fuzz_parser.py`.
+- Argon2id cost benchmark script `scripts/benchmark_kdf.py` for measuring
+  key-derivation performance across memory/time/parallelism configurations.
 - Full external-interface reference documentation for the CLI in
   `docs/CLI.md` (all commands, inputs, outputs, environment variables, exit
   codes, and the container file format).
-- Read-only `gun101 info` subcommand that outputs configuration parameters,
-  KDF settings, installed dependency versions, and password policy summary as
-  key=value lines.
 - README section on how to report bugs and contribute.
+
+### Changed
+
+- Hardened `decrypt_file` container parsing against malformed inputs: rejects
+  non-dict JSON roots and non-string keyfile fingerprints instead of leaking
+  unexpected `TypeError`s, and catches `TypeError` during base64 decoding so all
+  failures consistently raise the generic `ValueError("Decryption failed")`.
 
 `pyproject.toml` version will be bumped when a release is cut from these
 changes. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute.
