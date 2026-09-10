@@ -199,14 +199,18 @@ def info(args):
         ("argon2_salt_len", config.ARGON2_SALT_LEN),
         ("cryptography_version", _get_pkg_version("cryptography")),
         ("argon2_cffi_version", _get_pkg_version("argon2-cffi")),
-        ("password_min_length", 10),
-        ("password_require_uppercase", "true"),
-        ("password_require_lowercase", "true"),
-        ("password_require_digit", "true"),
-        ("password_require_special", "true"),
+        ("password_min_length", config.PASSWORD_MIN_LENGTH),
+        ("password_require_uppercase", "true" if config.PASSWORD_REQUIRE_UPPERCASE else "false"),
+        ("password_require_lowercase", "true" if config.PASSWORD_REQUIRE_LOWERCASE else "false"),
+        ("password_require_digit", "true" if config.PASSWORD_REQUIRE_DIGIT else "false"),
+        ("password_require_special", "true" if config.PASSWORD_REQUIRE_SPECIAL else "false"),
         (
             "password_policy",
-            "min_length 10, uppercase required, lowercase required, digit required, special character required",
+            f"min_length {config.PASSWORD_MIN_LENGTH}"
+            + (", uppercase required" if config.PASSWORD_REQUIRE_UPPERCASE else "")
+            + (", lowercase required" if config.PASSWORD_REQUIRE_LOWERCASE else "")
+            + (", digit required" if config.PASSWORD_REQUIRE_DIGIT else "")
+            + (", special character required" if config.PASSWORD_REQUIRE_SPECIAL else "")
         ),
     ]
     for key, value in fields:
