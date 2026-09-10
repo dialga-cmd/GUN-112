@@ -125,10 +125,15 @@ def decrypt_file(container_data: bytes, password: str, keyfile_path: str = None)
     validate_password(password)
 
     # Step 1: Parse JSON
+    if not isinstance(container_data, bytes):
+        raise ValueError("Decryption failed")
     try:
         container = json.loads(container_data.decode('utf-8'))
     except (json.JSONDecodeError, UnicodeDecodeError):
         raise ValueError("Decryption failed") from None
+
+    if not isinstance(container, dict):
+        raise ValueError("Decryption failed")
 
     # Step 2: Verify protocol and version
     if container.get("protocol") != config.PROTOCOL:
@@ -147,7 +152,7 @@ def decrypt_file(container_data: bytes, password: str, keyfile_path: str = None)
     if keyfile_path is not None:
         keyfile_bytes = keyfile.load_keyfile(keyfile_path)
         expected_fingerprint = container.get("keyfile_fingerprint")
-        if expected_fingerprint is None:
+        if not isinstance(expected_fingerprint, str):
             raise ValueError("Decryption failed")
         actual_fingerprint = keyfile.keyfile_fingerprint(keyfile_bytes)
         if not hmac.compare_digest(actual_fingerprint.encode('utf-8'), expected_fingerprint.encode('utf-8')):
@@ -159,7 +164,7 @@ def decrypt_file(container_data: bytes, password: str, keyfile_path: str = None)
         nonce = base64.b64decode(container["nonce"])
         ciphertext = base64.b64decode(container["ciphertext"])
         tag = base64.b64decode(container["tag"])
-    except (KeyError, ValueError):
+    except (KeyError, ValueError, TypeError):
         raise ValueError("Decryption failed") from None
 
     # Step 6: Derive key

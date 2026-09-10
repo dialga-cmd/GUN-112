@@ -343,3 +343,120 @@ class TestGetPasswordPathInProcess:
         _, err, exc = run(cli.generate_keyfile, make_arg(path="afile/inner.kf"))
         assert exc is not None and exc.code == 1
         assert "Error creating keyfile" in err
+
+
+class TestSafeOpenWritePathContainment:
+    """Tests for safe_open_write path-containment and case sensitivity (Issue #10)."""
+
+    def test_safe_open_write_relative_path(self, workdir):
+        """Relative paths within cwd should be accepted."""
+        with cli.safe_open_write("relative.bin") as f:
+            f.write(b"data")
+        assert os.path.exists("relative.bin")
+
+        with keyfile.safe_open_write("relative_kf.bin") as f:
+            f.write(b"data")
+        assert os.path.exists("relative_kf.bin")
+
+    def test_safe_open_write_relative_escape_rejected(self, workdir):
+        """Path traversal outside cwd must be rejected."""
+        with pytest.raises(ValueError, match="escape"):
+            cli.safe_open_write("../evil.bin")
+        with pytest.raises(ValueError, match="escape"):
+            keyfile.safe_open_write("../evil_kf.bin")
+
+    def test_safe_open_write_mixed_case_path_portable(self, workdir, monkeypatch):
+        """Deterministic unit-level test verifying containment uses os.path.normcase across all OSes.
+
+        Demonstrates that paths differing only by letter case are recognized as the
+        same path under containment comparison when normalized with os.path.normcase().
+        """
+        real_cwd = os.path.realpath(os.getcwd())
+        alt_cwd = "".join(c.lower() if c.isupper() else c.upper() for c in real_cwd)
+
+        # 1. Demonstrate that raw commonpath without case-normalization fails on differing case
+        import posixpath
+
+        posix_cwd = "/mock/work/directory"
+        posix_alt_path = "/MOCK/WORK/DIRECTORY/output.bin"
+        assert posixpath.commonpath([posix_alt_path, posix_cwd]) != posix_cwd
+        # With case-normalization, they match as the same directory
+        assert posixpath.commonpath([posix_alt_path.lower(), posix_cwd.lower()]) == posix_cwd.lower()
+
+        # 2. Verify safe_open_write in cli and keyfile invokes os.path.normcase and accepts differing case
+        normcase_recorded = []
+
+        def tracking_normcase(p):
+            normcase_recorded.append(p)
+            return p.lower()
+
+        orig_realpath = os.path.realpath
+
+        def mock_realpath(p):
+            # Return alt_cwd when resolving target files, simulating case divergence
+            if os.path.basename(p) in ("portable_cli.bin", "portable_kf.bin"):
+                return os.path.join(alt_cwd, os.path.basename(p))
+            return orig_realpath(p)
+
+        monkeypatch.setattr(os.path, "normcase", tracking_normcase)
+        monkeypatch.setattr(os.path, "realpath", mock_realpath)
+
+        with cli.safe_open_write("portable_cli.bin") as f:
+            f.write(b"cli_data")
+        assert os.path.exists("portable_cli.bin")
+        assert any("portable_cli.bin" in p for p in normcase_recorded)
+
+        normcase_recorded.clear()
+        with keyfile.safe_open_write("portable_kf.bin") as f:
+            f.write(b"kf_data")
+        assert os.path.exists("portable_kf.bin")
+        assert any("portable_kf.bin" in p for p in normcase_recorded)
+
+    def test_safe_open_write_mixed_case_path_native(self, workdir):
+        """Native filesystem test on Windows/macOS where the OS filesystem is case-insensitive."""
+        if sys.platform not in ("win32", "darwin"):
+            pytest.skip("Case-insensitive filesystem test on Windows/macOS")
+
+        real_cwd = os.path.realpath(os.getcwd())
+        alt_cwd = "".join(c.lower() if c.isupper() else c.upper() for c in real_cwd)
+
+        cli_alt_path = os.path.join(alt_cwd, "alt_case_cli.bin")
+        with cli.safe_open_write(cli_alt_path) as f:
+            f.write(b"data")
+        assert os.path.exists(cli_alt_path)
+
+        kf_alt_path = os.path.join(alt_cwd, "alt_case_kf.bin")
+        with keyfile.safe_open_write(kf_alt_path) as f:
+            f.write(b"data")
+        assert os.path.exists(kf_alt_path)
+
+    def test_safe_open_write_windows_drive_letter(self, workdir):
+        """Windows drive-letter handling: case-insensitive match and cross-drive escape rejection."""
+        if sys.platform != "win32":
+            pytest.skip("Windows-specific drive-letter test")
+
+        real_cwd = os.path.realpath(os.getcwd())
+        drive, rest = os.path.splitdrive(real_cwd)
+        if not drive:
+            pytest.skip("No drive letter in cwd")
+
+        # Same drive, opposite case (e.g. C: vs c:)
+        alt_drive = drive.lower() if drive.isupper() else drive.upper()
+        same_drive_path = alt_drive + rest + r"\drive_case.bin"
+
+        with cli.safe_open_write(same_drive_path) as f:
+            f.write(b"data")
+        assert os.path.exists(same_drive_path)
+
+        with keyfile.safe_open_write(same_drive_path + ".kf") as f:
+            f.write(b"data")
+        assert os.path.exists(same_drive_path + ".kf")
+
+        # Different drive letter must be rejected as an escape attempt
+        other_drive = "Z:" if drive.upper() != "Z:" else "Y:"
+        other_drive_path = other_drive + r"\escape_drive.bin"
+
+        with pytest.raises(ValueError, match="escape"):
+            cli.safe_open_write(other_drive_path)
+        with pytest.raises(ValueError, match="escape"):
+            keyfile.safe_open_write(other_drive_path)

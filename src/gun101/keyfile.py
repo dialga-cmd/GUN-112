@@ -19,8 +19,15 @@ def safe_open_write(path):
     # Get the real path (resolving symlinks)
     real_path = os.path.realpath(path)
     real_cwd = os.path.realpath(os.getcwd())
+    norm_path = os.path.normcase(real_path)
+    norm_cwd = os.path.normcase(real_cwd)
+    try:
+        common_path = os.path.commonpath([norm_path, norm_cwd])
+    except ValueError:
+        raise ValueError("Output path attempts to escape the intended directory") from None
+
     # Ensure the real path is within the real cwd
-    if not os.path.commonpath([real_path, real_cwd]) == real_cwd:
+    if common_path != norm_cwd:
         raise ValueError("Output path attempts to escape the intended directory")
 
     # Open the file for writing in binary mode

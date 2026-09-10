@@ -103,6 +103,9 @@ gun101 generate-keyfile <path>
 
 gun101 keyfile-fingerprint <path>
   Prints the SHA-256 fingerprint of a keyfile.
+
+gun101 info
+  Prints program and container configuration (protocol, version, Argon2 parameters, library versions).
 ```
 
 ## Design Decisions

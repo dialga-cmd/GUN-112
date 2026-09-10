@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gun101"
-version = "2.1.0"
+version = "2.1.2"
 description = "A simple, secure file encryption tool using AES-256-GCM and Argon2id"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -41,7 +41,8 @@ dev = [
     "pytest-cov>=4.0.0",
     "ruff>=0.5.0",
     "bandit>=1.7.0",
-    "pip-audit>=2.0.0"
+    "pip-audit>=2.0.0",
+    "hypothesis>=6.168.0"
 ]
 
 [tool.hatch.build.targets.wheel]
