@@ -23,15 +23,15 @@ def validate_password(password: str) -> None:
     """
     if not isinstance(password, str):
         raise ValueError("Password must be a string")
-    if len(password) < 10:
+    if len(password) < config.PASSWORD_MIN_LENGTH:
         raise ValueError("Password must be at least 10 characters long")
-    if not any(c.isupper() for c in password):
+    if config.PASSWORD_REQUIRE_UPPERCASE and not any(c.isupper() for c in password):
         raise ValueError("Password must contain at least one uppercase letter")
-    if not any(c.islower() for c in password):
+    if config.PASSWORD_REQUIRE_LOWERCASE and not any(c.islower() for c in password):
         raise ValueError("Password must contain at least one lowercase letter")
-    if not any(c.isdigit() for c in password):
+    if config.PASSWORD_REQUIRE_DIGIT and not any(c.isdigit() for c in password):
         raise ValueError("Password must contain at least one digit")
-    if not any(c in string.punctuation for c in password):
+    if config.PASSWORD_REQUIRE_SPECIAL and not any(c in string.punctuation for c in password):
         raise ValueError("Password must contain at least one special character")
 
 
