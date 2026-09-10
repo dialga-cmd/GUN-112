@@ -413,12 +413,24 @@ class TestSafeOpenWritePathContainment:
         assert any("portable_kf.bin" in p for p in normcase_recorded)
 
     def test_safe_open_write_mixed_case_path_native(self, workdir):
-        """Native filesystem test on Windows/macOS where the OS filesystem is case-insensitive."""
-        if sys.platform not in ("win32", "darwin"):
-            pytest.skip("Case-insensitive filesystem test on Windows/macOS")
+        """Native filesystem test on filesystems that are case-insensitive."""
+        # Detect whether the actual filesystem at the temporary test location is case-insensitive
+        probe = workdir / "case_sensitivity_probe.tmp"
+        probe.write_text("probe")
+        is_case_insensitive = (workdir / "CASE_SENSITIVITY_PROBE.TMP").exists()
+        try:
+            probe.unlink()
+        except OSError:
+            pass
+
+        if not is_case_insensitive:
+            pytest.skip("Filesystem at test location is case-sensitive")
 
         real_cwd = os.path.realpath(os.getcwd())
         alt_cwd = "".join(c.lower() if c.isupper() else c.upper() for c in real_cwd)
+
+        if not os.path.exists(alt_cwd):
+            pytest.skip("Working directory path is not accessible with alternated case")
 
         cli_alt_path = os.path.join(alt_cwd, "alt_case_cli.bin")
         with cli.safe_open_write(cli_alt_path) as f:
