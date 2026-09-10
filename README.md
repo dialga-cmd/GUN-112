@@ -2,7 +2,12 @@
 
 A simple, secure file encryption tool using **AES-256-GCM** and **Argon2id**.
 
+[![CI](https://github.com/dialga-cmd/GUN101/actions/workflows/ci.yml/badge.svg)](https://github.com/dialga-cmd/GUN101/actions/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/gun101)](https://pypi.org/project/gun101/)
+[![Python versions](https://img.shields.io/pypi/pyversions/gun101)](https://pypi.org/project/gun101/)
+[![License: MIT](https://img.shields.io/pypi/l/gun101)](https://github.com/dialga-cmd/GUN101/blob/main/LICENSE)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/14526/badge)](https://www.bestpractices.dev/projects/14526)
+[![Security Policy](https://img.shields.io/badge/security-policy-blue)](https://github.com/dialga-cmd/GUN101/security/policy)
 
 ## What problem does this solve?
 

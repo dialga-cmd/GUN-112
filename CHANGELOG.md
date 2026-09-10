@@ -5,7 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.1.3] - 2026-09-10
+
+### Fixed
+
+- Remove password policy validation from `decrypt_file()` to allow
+  containers created with older/shorter passwords to be decrypted.
+  Encryption still enforces the current policy; decryption relies on
+  AES-GCM authentication to verify password correctness. (Closes #4)
+- Harden path traversal checks in `safe_open_write()` for case-insensitive
+  filesystems (NTFS, default APFS) by folding case before the
+  `commonpath` containment check. (Closes #9)
+
+### Changed
+
+- Expand CI matrix from Ubuntu-only to Ubuntu, macOS, and Windows across
+  Python 3.10, 3.11, and 3.12.
+
+### Added
+
+- Regression tests for legacy password decryption and incorrect password
+  failure behavior.
+- Tests for case-insensitive filesystem detection and escape rejection.
 
 ## [2.1.2] - 2026-09-09
 
